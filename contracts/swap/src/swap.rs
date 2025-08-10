@@ -83,7 +83,23 @@ pub fn start_swap_flow(
             denom: source_denom.to_owned(),
         };
 
-        FPDecimal::from(coin_provided.amount) - estimation.result_quantity
+        // FIX: Use required_input instead of estimation.result_quantity for refund calculation
+        // This prevents the vulnerability where refund was calculated incorrectly
+        let refund = FPDecimal::from(coin_provided.amount)
+            .checked_sub(required_input)
+            .ok_or_else(|| ContractError::InsufficientFundsProvided(
+                coin_provided.amount.into(), 
+                required_input
+            ))?;
+
+        // Ensure refund is non-negative
+        if refund < FPDecimal::ZERO {
+            return Err(ContractError::CustomError {
+                val: "Negative refund calculated".to_string(),
+            });
+        }
+
+        refund
     } else {
         FPDecimal::ZERO
     };
