@@ -21,13 +21,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Set github url and credentials
+        if: github.event_name != 'pull_request'
         run: |
           /usr/bin/git config --global --add url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github".insteadOf ssh://git@github
           /usr/bin/git config --global --add url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github".insteadOf https://github
           /usr/bin/git config --global --add url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github".insteadOf git@github
 
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
@@ -78,21 +79,26 @@ jobs:
         # ./grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./target/debug/lcov.info --ignore *_test.rs
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
           path: "./target/debug/coverage/"
+          
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
   lints:
     name: Lints
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -115,6 +121,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Set github url and credentials
+        if: github.event_name != 'pull_request'
         run: |
           /usr/bin/git config --global --add url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github".insteadOf ssh://git@github
           /usr/bin/git config --global --add url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github".insteadOf https://github

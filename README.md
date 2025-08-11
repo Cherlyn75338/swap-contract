@@ -92,6 +92,58 @@ Example how to allow the contract admin to authorize other addresses to make con
  injectived tx grant contract execution <grantee_addr> <contract_addr> --allow-raw-msgs set_routes --max-calls 5 --max-funds 100000uwasm --expiration 1667979596  --from=sgt-account --gas=auto --gas-prices 500000000inj --gas-adjustment 1.3 --output=json --node=https://testnet.sentry.tm.injective.network:443 --chain-id='injective-888'
 ```
 
+## Vulnerability Testing
+
+⚠️ **CRITICAL SECURITY NOTICE**: This contract contains known vulnerabilities that allow for fund theft and state manipulation.
+
+### Running Vulnerability Tests
+
+This repository includes comprehensive vulnerability tests that demonstrate critical security flaws in the contract architecture.
+
+#### Option 1: Manual Script (Recommended)
+
+Run the provided script for an interactive testing experience:
+
+```bash
+./run_vulnerability_tests.sh
+```
+
+#### Option 2: Direct Cargo Command
+
+```bash
+cd contracts/swap
+cargo test vulnerability_tests --lib -- --nocapture
+```
+
+#### Option 3: GitHub Actions (Manual Trigger)
+
+You can also run the tests through GitHub Actions:
+1. Go to the "Actions" tab in the repository
+2. Select "Vulnerability Tests" workflow
+3. Click "Run workflow" button
+4. Choose your branch and click "Run workflow"
+
+### What the Tests Prove
+
+The vulnerability tests confirm the following critical security issues:
+
+1. **Global State Overwrite**: Any user can overwrite another user's swap state
+2. **Fund Theft Potential**: Attackers can redirect funds to their own addresses
+3. **Race Conditions**: Concurrent swaps interfere with each other
+4. **No User Isolation**: Single global storage for all user operations
+5. **Dirty State**: Failed transactions leave corrupted state for next user
+
+### Test Results Interpretation
+
+- ✅ **Passing tests = Vulnerabilities CONFIRMED**
+- ❌ **Failing tests = Test environment issues**
+
+The tests are designed to pass when vulnerabilities are successfully exploited, proving their existence.
+
+### Recommended Fix
+
+Replace `Item<CurrentSwapOperation>` with `Map<Addr, CurrentSwapOperation>` to provide proper user isolation and prevent state overwrites.
+
 ## Disclaimer
 
 This contract is designed for educational purposes only. Your use of this contract constitutes your agreement to the terms of the License below. In addition, your use of this contract constitutes your agreement to defend, indemnify, and hold harmless the contributors to this codebase from all claims of any kind related to your use of this contract.
